@@ -3,10 +3,7 @@
 
 # Gradle files & folder
 .gradle/
-/build/
+build/
 
 # macOS files & folder
 .DS_Store
-
-# I-dont-know
-/logs/

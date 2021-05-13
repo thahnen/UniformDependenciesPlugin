@@ -6,7 +6,7 @@ import java.util.Properties
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.artifacts.ExternalModuleDependency
 
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.extra
@@ -31,6 +31,123 @@ open class UniformDependenciesPlugin : Plugin<Project> {
     private val KEY_PATH = "plugins.uniformdependencies.path"
 
 
+    companion object {
+        /**
+         *  Parses given properties file containing all dependencies, where each dependency corresponds to two connected
+         *  properties which look like
+         *  - <Name>.group=<Group>
+         *  - <Name>.version=<Version>
+         *  because names are distinct but groups not
+         *
+         *  @param path previously resolved absolute path
+         *  @return list of all dependencies found
+         *  @throws ParsingDependenciesException when properties file is not correctly constructed
+         */
+        @Throws(ParsingDependenciesException::class)
+        internal fun parseDependenciesList(path: String) : List<UniformDependenciesObject> {
+            val dependenciesObjects: List<UniformDependenciesObject> = emptyList()
+
+            // load properties from given absolute path
+            val properties = Properties()
+            properties.load(FileInputStream(path))
+
+            with(properties.propertyNames()) {
+                if (this.toList().isEmpty()) {
+                    throw ParsingDependenciesException(
+                        "$path is incorrectly constructed, no dependency found (possible comments were ignored)!"
+                    )
+                } else if (this.toList().size % 2 != 0) {
+                    // Fehler, nur gerade Anzahl erlaubt!
+                    throw ParsingDependenciesException(
+                        "$path is incorrectly constructed, number of properties provided must be even! This is because "
+                        + "there are always two properties that make up a single dependency: <Name>.group=<Group> / "
+                        + "<Name>.version=<Version>"
+                    )
+                }
+
+                while (this.hasMoreElements()) {
+                    // read two keys (fault tolerance)
+                    val key1 = this.nextElement() as String
+                    val key2 = this.nextElement() as String
+
+                    val dependency: UniformDependenciesObject
+
+                    if (key1.endsWith(".group") && key2.endsWith(".version")) {
+                        if (key1.replace(".group", "") != key2.replace(".version", "")) {
+                            throw ParsingDependenciesException(
+                                "$path is incorrectly constructed, connected properties '$key1' and '$key2' do not "
+                                + "correspond to the same dependency! This is because the property "
+                                + "'${key1.replace(".group", "")}.version=<Version>' is missing or at "
+                                + "the wrong place in the file!"
+                            )
+                        }
+
+                        dependency = UniformDependenciesObject(
+                            group   = properties[key1]!! as String,
+                            name    = key1.replace(".group", ""),
+                            version = properties[key2]!! as String
+                        )
+                    } else if (key1.endsWith(".version") && key2.endsWith(".group")) {
+                        if (key1.replace(".version", "") != key2.replace(".group", "")) {
+                            throw ParsingDependenciesException(
+                                "$path is incorrectly constructed, connected properties '$key1' and '$key2' do not "
+                                + "correspond to the same dependency! This is because the property "
+                                + "'${key1.replace(".version", "")}.group=<Group>' is missing or at "
+                                + "the wrong place in the file!"
+                            )
+                        }
+
+                        dependency = UniformDependenciesObject(
+                            group   = key1.replace(".version", ""),
+                            name    = properties[key2]!! as String,
+                            version = properties[key1]!! as String
+                        )
+                    } else {
+                        // Fehler: Abhaengigkeiten muessen immer zusammenhaengend deklariert werden!
+                        throw ParsingDependenciesException(
+                            "$path is incorrectly constructed, properties '$key1' and '$key2' are both properties "
+                            + "containing a group / version! There must always be two properties that make up a single "
+                            + "dependency: <Name>.group=<Group> / <Name>.version=<Version>"
+                        )
+                    }
+
+                    dependenciesObjects.plus(dependency)
+                }
+            }
+
+            return dependenciesObjects
+        }
+
+
+        /**
+         *  Tries to create a uniform configuration name from provided configuration name with the scheme shown by the
+         *  following examples:
+         *      implementation      -> uImplementation
+         *      testImplementation  -> uTestImplementation
+         *
+         *  @param target the project which the plugin is applied to, may be sub-project
+         *  @param configurationName name of the default(?) configuration
+         *  @return uniform configuration name, for examples look above
+         *  @throws ConfigurationNotFoundException when configuration provided could not be found in project provided
+         */
+        @Throws(ConfigurationNotFoundException::class)
+        internal fun createUniformConfigurationName(target: Project, configurationName: String) : String {
+            target.configurations.findByName(configurationName)?.let {
+                val (first: String, rest: String) = configurationName.splitAtIndex(1)
+                return "u${first.toUpperCase()}$rest"
+            }
+
+            throw ConfigurationNotFoundException(
+                "Creating a uniform configuration name from provided configuration $configurationName could not be "
+                + "done because given configuration could not be found in project $target. This is an internal "
+                + "exception, so please create an issue over at "
+                + "https://github.com/thahnen/UniformDependenciesPlugin/issues and let me know what went wrong so I "
+                + "can try to fix it ;)"
+            )
+        }
+    }
+
+
     /** Overrides the abstract "apply" function */
     override fun apply(target: Project) {
         // 1) retrieve path to file containing all dependencies
@@ -47,7 +164,7 @@ open class UniformDependenciesPlugin : Plugin<Project> {
         }
 
         // 4) apply Java plugin
-        target.apply(JavaPlugin::class.java)
+        target.apply(plugin = "java")
 
         // 5) add uniform dependency configuration for each configuration provided by Gradle + Java plugin
         createUniformDependencyConfiguration(target, "compileOnly")
@@ -81,12 +198,12 @@ open class UniformDependenciesPlugin : Plugin<Project> {
                 target.properties[KEY_PATH] as String
             } else if (target.rootProject.properties.containsKey(KEY_PATH)) {
                 target.rootProject.properties[KEY_PATH] as String
+            } else {
+                throw MissingDependenciesPathException(
+                    "Path to properties file with all possible dependencies, marked with property identifier "
+                    + "'$KEY_PATH' not provided as environment variable or in (root) projects gradle.properties file!"
+                )
             }
-
-            throw MissingDependenciesPathException(
-                "Path to properties file with all possible dependencies, marked with property identifier '$KEY_PATH' "
-                + "not provided as environment variable or in (root) projects gradle.properties file!"
-            )
         }
     }
 
@@ -136,87 +253,7 @@ open class UniformDependenciesPlugin : Plugin<Project> {
     }
 
 
-    /**
-     *  Parses given properties file containing all dependencies, where each dependency corresponds to two connected
-     *  properties which look like
-     *  - <Name>.group=<Group>
-     *  - <Name>.version=<Version>
-     *  because names are distinct but groups not
-     *
-     *  @param path previously resolved absolute path
-     *  @return list of all dependencies found
-     *  @throws ParsingDependenciesException when properties file is not correctly constructed
-     */
-    @Throws(ParsingDependenciesException::class)
-    private fun parseDependenciesList(path: String) : List<UniformDependenciesObject> {
-        val dependenciesObjects: List<UniformDependenciesObject> = emptyList()
 
-        // load properties from given absolute path
-        val properties = Properties()
-        properties.load(FileInputStream(path))
-
-        with(properties.propertyNames()) {
-            if (this.toList().size % 2 != 0) {
-                // Fehler, nur gerade Anzahl erlaubt!
-                throw ParsingDependenciesException(
-                    "$path is incorrectly constructed, number of properties provided must be even! This is because "
-                    + "there are always two properties that make up a single dependency: <Name>.group=<Group> / "
-                    + "<Name>.version=<Version>"
-                )
-            }
-
-            while (this.hasMoreElements()) {
-                // read two keys (fault tolerance)
-                val key1 = this.nextElement() as String
-                val key2 = this.nextElement() as String
-
-                val dependency: UniformDependenciesObject
-
-                if (key1.endsWith(".group") && key2.endsWith(".version")) {
-                    if (key1.replace(".group", "") != key2.replace(".version", "")) {
-                        throw ParsingDependenciesException(
-                            "$path is incorrectly constructed, connected properties '$key1' and '$key2' do not "
-                            + "correspond to the same dependency! This is because the property "
-                            + "'${key1.replace(".group", "")}.version=<Version>' is missing or at the "
-                            + "wrong place in the file!"
-                        )
-                    }
-
-                    dependency = UniformDependenciesObject(
-                        group   = properties[key1]!! as String,
-                        name    = key1.replace(".group", ""),
-                        version = properties[key2]!! as String
-                    )
-                } else if (key1.endsWith(".version") && key2.endsWith(".group")) {
-                    if (key1.replace(".version", "") != key2.replace(".group", "")) {
-                        throw ParsingDependenciesException(
-                            "$path is incorrectly constructed, connected properties '$key1' and '$key2' do not "
-                            + "correspond to the same dependency! This is because the property "
-                            + "'${key1.replace(".version", "")}.group=<Group>' is missing or at the"
-                            + "wrong place in the file!"
-                        )
-                    }
-
-                    dependency = UniformDependenciesObject(
-                        group   = key1.replace(".version", ""),
-                        name    = properties[key2]!! as String,
-                        version = properties[key1]!! as String
-                    )
-                } else {
-                    // Fehler: Abhaengigkeiten muessen immer zusammenhaengend deklariert werden!
-                    throw ParsingDependenciesException(
-                        "$path is incorrectly constructed, properties '$key1' and '$key2' are both properties "
-                        + "containing a group / version! There must always be two properties that make up a single "
-                        + "dependency: <Name>.group=<Group> / <Name>.version=<Version>"
-                    )
-                }
-
-                dependenciesObjects.plus(dependency)
-            }
-        }
-
-        return dependenciesObjects
-    }
 
 
     /**
@@ -226,32 +263,41 @@ open class UniformDependenciesPlugin : Plugin<Project> {
      *  @param target the project which the plugin is applied to, may be sub-project
      *  @param configurationName name of the default(?) configuration
      *  @throws DependencyNotFoundException when dependency given in configuration was not provided using plugin
+     *  @throws ConfigurationNotFoundException when createUniformConfigurationName fails
      */
-    @Throws(DependencyNotFoundException::class)
+    @Throws(DependencyNotFoundException::class, ConfigurationNotFoundException::class)
     private fun createUniformDependencyConfiguration(target: Project, configurationName: String) {
-        val (first: String, rest: String) = configurationName.splitAtIndex(1)
-        val uniformConfigurationName = "u${first.toUpperCase()}$rest"
+        val uniformConfigurationName = createUniformConfigurationName(target, configurationName)
 
         // check if dependency configuration already exists
         target.configurations.findByName(uniformConfigurationName)?.let {
             return
         }
 
-        target.dependencies.extra[uniformConfigurationName] = { group: String, name: String ->
-            target.extra.get("$group:$name")?.let {
-                target.dependencies.add(configurationName, mapOf(
-                    "group" to group,
-                    "name" to name,
-                    "version" to (it as String)
-                ))
-            } ?: run {
-                val propertiesPath = target.extra.get(KEY_PATH) ?: "(unknown*) dependencies properties file"
+        target.configurations.create(uniformConfigurationName) {
+            extendsFrom(target.configurations.getByName(configurationName))
+            isVisible = true
 
-                throw DependencyNotFoundException(
-                    "$uniformConfigurationName('$group:$name') could not be resolved to "
-                    + "$configurationName('$group:$name:$<Version>') because dependency could not be found in "
-                    + "$propertiesPath!"
-                )
+            withDependencies {
+                // TODO: assert that all dependencies are of type ExternalModuleDependency
+
+                forEach {
+                    // TODO: test version and make sure it is null!
+
+                    target.extra.get("${it.group}:${it.name}")?.let { version ->
+                        (it as ExternalModuleDependency).version {
+                            strictly(version as String)
+                        }
+                    } ?: run {
+                        val propertiesPath = target.extra.get(KEY_PATH) ?: "(unknown*) dependencies properties file"
+
+                        throw DependencyNotFoundException(
+                            "$uniformConfigurationName('${it.group}:${it.name}') could not be resolved to "
+                            + "$configurationName('${it.group}:${it.name}:$<Version>') because dependency could not be "
+                            + "found in $propertiesPath!"
+                        )
+                    }
+                }
             }
         }
     }

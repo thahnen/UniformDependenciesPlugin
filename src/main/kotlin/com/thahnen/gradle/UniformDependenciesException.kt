@@ -33,6 +33,13 @@ open class ParsingDependenciesException(message: String) : UniformDependenciesEx
 
 
 /**
+ *  Exception thrown when creating a uniform configuration name from given configuration name could not be done because
+ *  given configuration does not exist in project
+ */
+open class ConfigurationNotFoundException(message: String) : UniformDependenciesException(message)
+
+
+/**
  *  Exception thrown when artifact requested using one of the uniform dependency configurations was not found in
  *  properties file provided to the plugin via environment variables or (root) projects gradle.properties file
  */
