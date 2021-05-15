@@ -1,0 +1,9 @@
+# IntelliJ Idea files & folder
+.idea/
+
+# Gradle files & folder
+.gradle/
+build/
+
+# macOS files & folder
+.DS_Store
