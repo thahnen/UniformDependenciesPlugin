@@ -14,8 +14,6 @@ import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.testfixtures.ProjectBuilder
 
-import org.gradle.kotlin.dsl.extra
-
 import com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable
 
 
@@ -94,8 +92,8 @@ class UniformDependenciesPluginTest {
     }
 
 
-    /** 4) Tests applying the plugin and evaluates the extra properties set by plugin */
-    @Test fun testEvaluateCorrectnessExtraProperties() {
+    /** 4) Tests applying the plugin and evaluates that the extension set by plugin exists */
+    @Test fun testEvaluatePluginExtension() {
         val project = ProjectBuilder.builder().build()
 
         // project gradle.properties reference (project.properties.set can not be used directly!)
@@ -105,14 +103,19 @@ class UniformDependenciesPluginTest {
         // apply plugin
         project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
-        // assert that path to dependencies.properties is saved in project extra property
-        assertEquals(true, project.extra.has("plugins.uniformdependencies.path"))
-        assertEquals(File(dependenciesPropertiesPath).absolutePath, project.extra["plugins.uniformdependencies.path"])
+        // assert that extension exists and is configured correctly
+        val extension = project.extensions.getByType(UniformDependenciesPluginExtension::class.java)
 
-        // assert that all dependencies from dependencies.properties are saved in project extra property
-        UniformDependenciesPlugin.parseDependenciesList(File(dependenciesPropertiesPath).absolutePath).forEach {
-            assertEquals(true, project.extra.has("${it.group}:${it.name}"))
-            assertEquals(it.version, project.extra["${it.group}:${it.name}"])
+        assertEquals(dependenciesPropertiesPath, extension.path.get())
+
+        val dependenciesFromFile = UniformDependenciesPlugin.parseDependenciesList(
+            File(dependenciesPropertiesPath).absolutePath
+        ).toList()
+        val dependenciesExtension = extension.dependencies.get().split(";")
+
+        assertEquals(dependenciesFromFile.size, dependenciesExtension.size)
+        dependenciesFromFile.forEach {
+            assertEquals(true, dependenciesExtension.contains("${it.group}:${it.name}:${it.version}"))
         }
     }
 
@@ -133,26 +136,10 @@ class UniformDependenciesPluginTest {
     }
 
 
-    /** 6) Tests applying the plugin and evaluates uniform dependencies configurations */
-    @Test fun testEvaluateUniformDependenciesConfigurations() {
-        val project = ProjectBuilder.builder().build()
-
-        // project gradle.properties reference (project.properties.set can not be used directly!)
-        val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
-        propertiesExtension["plugins.uniformdependencies.path"] = dependenciesPropertiesPath
-
-        // apply plugin
-        project.pluginManager.apply(UniformDependenciesPlugin::class.java)
-
-        // assert that new uniform dependencies configuration exist & they extend the old dependencies configuration
-        listOf(
-            "compileOnly", "implementation", "runtimeOnly", "testCompileOnly", "testImplementation", "testRuntimeOnly"
-        ).forEach {
-            val configuration = project.configurations.getByName(
-                UniformDependenciesPlugin.createUniformConfigurationName(project, it)
-            )
-
-            assertEquals(true, configuration.extendsFrom.contains(project.configurations.getByName(it)))
-        }
+    /** 6) Tests applying the plugin and evaluates the new resolution strategy for dependency configuration */
+    @Test fun testEvaluateResolutionStrategy() {
+        // 1. using implementation(...) with correct data
+        // 2. using implementation(...) with incorrect data
+        // ...
     }
 }

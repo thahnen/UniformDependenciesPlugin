@@ -36,8 +36,8 @@ repositories {
 
 /** 6) dependency configuration using the UniformDependenciesPlugin */
 dependencies {
-    implementation("com.google.code.gson:gson:2.8.6")
-    //uImplementation("com.google.code.gson:gson")
+    implementation("com.google.code.gson:gson")
+    implementation("com.github.stefanbirkner:system-lambda:1.2.0")
 }
 
 

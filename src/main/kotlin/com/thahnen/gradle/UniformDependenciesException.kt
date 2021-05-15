@@ -6,7 +6,7 @@ import org.gradle.api.InvalidUserDataException
 /**
  *  Base extension for every extension thrown by this plugin
  *
- *  @author Tobias Hahnen
+ *  @author thahnen
  */
 open class UniformDependenciesException(message: String) : InvalidUserDataException(message)
 
@@ -33,14 +33,16 @@ open class ParsingDependenciesException(message: String) : UniformDependenciesEx
 
 
 /**
- *  Exception thrown when creating a uniform configuration name from given configuration name could not be done because
- *  given configuration does not exist in project
+ *  Exception thrown when uniform configuration was called but a version was provided. This is not allowed because the
+ *  actual version to use should be given in the corresponding property in properties file containing all dependencies
+ *  which was provided to this plugin.
  */
-open class ConfigurationNotFoundException(message: String) : UniformDependenciesException(message)
+open class VersionProvidedException(message: String) : UniformDependenciesException(message)
 
 
 /**
  *  Exception thrown when artifact requested using one of the uniform dependency configurations was not found in
  *  properties file provided to the plugin via environment variables or (root) projects gradle.properties file
  */
+@SuppressWarnings("unused")
 open class DependencyNotFoundException(message: String) : UniformDependenciesException(message)

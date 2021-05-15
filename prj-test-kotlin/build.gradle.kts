@@ -36,11 +36,8 @@ repositories {
 
 /** 6) dependency configuration using the UniformDependenciesPlugin */
 dependencies {
-    // this notation must be used, see:
-    // https://docs.gradle.org/current/userguide/kotlin_dsl.html#sec:kotlin_using_standard_api
-    // or project.configurations.get("<Configuration>")(...)
-    implementation("com.google.code.gson:gson:2.8.6")
-    //"uImplementation"("com.google.code.gson:gson")
+    implementation("com.google.code.gson:gson")
+    implementation("com.github.stefanbirkner:system-lambda:1.2.0")
 }
 
 
