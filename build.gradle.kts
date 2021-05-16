@@ -8,9 +8,14 @@
 
 /** 1) Plugins used globally */
 plugins {
+    jacoco
+
+    `java-gradle-plugin`
     `kotlin-dsl`
+    `maven-publish`
 
     id("org.jetbrains.kotlin.jvm") version "1.4.20"
+    id("com.gradle.plugin-publish") version "0.14.0"
 }
 
 
@@ -34,4 +39,31 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     testImplementation("com.github.stefanbirkner:system-lambda:1.2.0")
     testImplementation(gradleTestKit())
+}
+
+
+/** 5) JaCoCo configuration */
+jacoco {
+    toolVersion = "0.8.6"
+}
+
+
+/** 6) Plugin configuration */
+pluginBundle {
+    website = "https://github.com/thahnen/UniformDependenciesPlugin"
+    vcsUrl  = "https://github.com/thahnen/UniformDependenciesPlugin.git"
+    tags = listOf("uniformity", "plugin management")
+}
+
+
+/** 7) Configuration for publishing plugin to Gradle Plugin Portal */
+gradlePlugin {
+    plugins {
+        create(project.extra["plugin.name"]!! as String) {
+            id                  = project.extra["plugin.id"]!! as String
+            displayName         = project.extra["plugin.displayName"]!! as String
+            description         = project.extra["plugin.description"]!! as String
+            implementationClass = project.extra["plugin.class"]!! as String
+        }
+    }
 }
