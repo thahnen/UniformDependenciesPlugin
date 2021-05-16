@@ -43,14 +43,14 @@ jobs:
       
       # 6) run subproject with Groovy DSL
       - name: prj-test-groovy
-      - run: |
+        run: |
           cd prj-test-groovy
           ./gradlew run --refresh-dependencies
           cd ..
       
       # 7) run sobproject with Kotlin DSL
       - name: prj-test-kotlin
-      - run: |
+        run: |
           cd prj-test-kotlin
           ./gradlew run --refresh-dependencies
           cd ..
