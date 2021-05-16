@@ -47,12 +47,18 @@ jacoco {
     toolVersion = "0.8.6"
 }
 
+tasks.jacocoTestReport {
+    reports {
+        csv.isEnabled = true
+    }
+}
+
 
 /** 6) Plugin configuration */
 pluginBundle {
     website = "https://github.com/thahnen/UniformDependenciesPlugin"
     vcsUrl  = "https://github.com/thahnen/UniformDependenciesPlugin.git"
-    tags = listOf("uniformity", "plugin management")
+    tags    = listOf("uniformity", "plugin management")
 }
 
 
