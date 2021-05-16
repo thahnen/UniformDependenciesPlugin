@@ -67,10 +67,10 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v1
         if: always()
         with:
-          files: build/test-results/**/*.xml
+          files: build/test-results/test/*.xml
 
       # 2) publish JaCoCo reports
       - name: JaCoCo coverage
         uses: cicirello/jacoco-badge-generator@v2
         with:
-          jacoco-cvs-file: build/reports/test/jacocoTestReport.csv
+          jacoco-csv-file: build/reports/test/jacocoTestReport.csv
