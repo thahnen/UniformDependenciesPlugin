@@ -19,6 +19,13 @@ open class MissingDependenciesPathException(message: String) : UniformDependenci
 
 
 /**
+ *  Exception thrown when strictness level provided in environment variable or (root) projects gradle.properties file is
+ *  not STRICT / LOOSELY / LOOSE
+ */
+open class WrongStrictnessLevelException(message: String) : UniformDependenciesException(message)
+
+
+/**
  *  Exception thrown when path to properties file containing all dependencies provided via environment variables or
  *  (root) projects gradle.properties file was neither absolute nor relative to (root) project directory
  */
@@ -44,5 +51,4 @@ open class VersionProvidedException(message: String) : UniformDependenciesExcept
  *  Exception thrown when artifact requested using one of the uniform dependency configurations was not found in
  *  properties file provided to the plugin via environment variables or (root) projects gradle.properties file
  */
-@SuppressWarnings("unused")
 open class DependencyNotFoundException(message: String) : UniformDependenciesException(message)

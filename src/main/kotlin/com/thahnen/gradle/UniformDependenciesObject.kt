@@ -2,6 +2,19 @@ package com.thahnen.gradle
 
 
 /**
+ *  Enumeration containing all possible strictness level for the configurations resolution strategy regarding all
+ *  external dependencies
+ *
+ *  @author thahnen
+ */
+enum class Strictness {
+    STRICT,
+    LOOSELY,
+    LOOSE
+}
+
+
+/**
  *  UniformDependenciesObject:
  *  =========================
  *

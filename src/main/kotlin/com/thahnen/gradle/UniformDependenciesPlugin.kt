@@ -30,6 +30,7 @@ open class UniformDependenciesPlugin : Plugin<Project> {
 
     // identifiers of properties connected to this plugin
     private val KEY_PATH        = "plugins.uniformdependencies.path"
+    private val KEY_STRICTNESS  = "plugins.uniformdependencies.strictness"
     private val KEY_EXTENSION   = "uniformdependenciespluginextension"
 
 
@@ -124,10 +125,13 @@ open class UniformDependenciesPlugin : Plugin<Project> {
         // 1) retrieve path to file containing all dependencies
         var propertiesPath = getPropertiesPath(target)
 
-        // 2) resolve absolute path
+        // 2) retrieve strictness level
+        val strictness = getStrictnessLevel(target)
+
+        // 3) resolve absolute path
         propertiesPath = resolveAbsolutePropertiesPath(target, propertiesPath)
 
-        // 3) parse all dependencies from file at absolute path
+        // 4) parse all dependencies from file at absolute path
         val dependencies = parseDependenciesList(propertiesPath)
 
         var dependenciesString = ""
@@ -136,15 +140,17 @@ open class UniformDependenciesPlugin : Plugin<Project> {
         }
         dependenciesString = dependenciesString.substring(0, dependenciesString.length-1)
 
-        // 4) custom extension to store tha data (as target.extra could not be used in resolution of dependencies)
+        // 5) custom extension to store tha data (as target.extra could not be used in resolution of dependencies)
         val extension = target.extensions.create<UniformDependenciesPluginExtension>(KEY_EXTENSION)
         extension.path.set(propertiesPath)
+        extension.strictness.set(strictness)
         extension.dependencies.set(dependenciesString)
 
-        // 5) apply Java plugin
+        // 6) apply Java plugin
         target.apply(plugin = "java")
 
-        // 6) change resolution strategy of all configurations to check for uniform dependencies
+        // 7) change resolution strategy of all configurations to check for uniform dependencies
+        //    TODO: Implement checking on Strictness other than dependency (not) found in properties file!
         target.configurations.all {
             // get configuration name
             val name = this.name
@@ -182,16 +188,19 @@ open class UniformDependenciesPlugin : Plugin<Project> {
                     } ?: run {
                         val path = target.extra.get(KEY_PATH) ?: "(unknown*) dependencies properties file"
 
-                        // TODO: Don't throw directly because some dependencies are another dependencies dependency!
-                        /*throw DependencyNotFoundException(
-                            "${dependency.group}:${dependency.name} was not found in properties file $path containing "
-                            + "all dependencies provided to this plugin. Therefore it must be set there!"
-                        )*/
+                        if (extension.strictness.get() == Strictness.STRICT) {
+                            throw DependencyNotFoundException(
+                                "${dependency.group}:${dependency.name} was not found in properties file $path "
+                                 + "containing all dependencies provided to this plugin. Therefore it must be set "
+                                + "there! Exception thrown because strictness level set to Strictness.STRICT!"
+                            )
+                        }
 
                         println(
                             "[UniformDependenciesPlugin] $path does not contain this dependency "
                             + "'${dependency.group}:${dependency.name}:${dependency.version}'. Maybe consider adding it"
-                            + "or ignore this warning IF IT IS a dependency of another dependency!"
+                            + "or ignore this warning IF IT IS a dependency of another dependency! No exception thrown "
+                            + "because strictness level is not set to Strictness.STRICT!"
                         )
                     }
                 }
@@ -221,6 +230,46 @@ open class UniformDependenciesPlugin : Plugin<Project> {
                 throw MissingDependenciesPathException(
                     "Path to properties file with all possible dependencies, marked with property identifier "
                     + "'$KEY_PATH' not provided as environment variable or in (root) projects gradle.properties file!"
+                )
+            }
+        }
+    }
+
+
+    /**
+     *  Tries to retrieve the strictness level from
+     *  - environment variable
+     *  - gradle.properties in project
+     *  - gradle.properties in root project
+     *
+     *  @param target the project which the plugin is applied to, may be sub-project
+     *  @return strictness level from one of the sources or fallback (Strictness.LOOSELY)
+     *  @throws WrongStrictnessLevelException when strictness level given is not STRICT / LOOSELY / LOOSE
+     */
+    @Throws(WrongStrictnessLevelException::class)
+    private fun getStrictnessLevel(target: Project) : Strictness {
+        return System.getenv(KEY_STRICTNESS)?.let {
+            try {
+                Strictness.valueOf(it)
+            } catch (e: IllegalArgumentException) {
+                throw WrongStrictnessLevelException(
+                    "Strictness level provided by environment variable '${it}' was incorrect! Possible values are: "
+                    + Strictness.values().toString()
+                )
+            }
+        } ?: run {
+            try {
+                if (target.properties.containsKey(KEY_STRICTNESS)) {
+                    Strictness.valueOf(target.properties[KEY_STRICTNESS] as String)
+                } else if (target.rootProject.properties.containsKey(KEY_STRICTNESS)) {
+                    Strictness.valueOf(target.rootProject.properties[KEY_STRICTNESS] as String)
+                } else {
+                    Strictness.LOOSELY
+                }
+            } catch (e: IllegalArgumentException) {
+                throw WrongStrictnessLevelException(
+                    "Strictness level provided in gradle.properties was incorrect! Possible values are: "
+                    + Strictness.values().toString()
                 )
             }
         }
