@@ -1,4 +1,4 @@
-package com.thahnen.gradle
+package com.github.thahnen
 
 import java.io.File
 import java.io.FileInputStream

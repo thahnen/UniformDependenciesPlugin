@@ -1,4 +1,4 @@
-package com.thahnen.gradle
+package com.github.thahnen
 
 import org.gradle.api.provider.Property
 
