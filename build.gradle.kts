@@ -92,6 +92,7 @@ publishing {
     publications {
         register<MavenPublication>("gpr") {
             from(components["java"])
+            artifactId = project.extra["plugin.artifactId"]!! as String
         }
     }
 }
