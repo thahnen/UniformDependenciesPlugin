@@ -69,8 +69,10 @@ jobs:
           jacoco-csv-file: build/reports/jacoco/test/jacocoTestReport.csv
       
       # 10) publish Gradle Plugin to GitHub Maven Nexus
-      # - name: Plugin upload
-      #   run: ./gradlew publish
+      - name: Plugin upload
+        run: ./gradlew publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 11) commit changes
       - name: commit badges
