@@ -75,24 +75,19 @@ gradlePlugin {
 }
 
 
-/** 8) Configuration for publishing plugin to GitHub Maven repository */
-publishing {
-    repositories {
-        maven {
-            url     = uri(project.extra["maven.nexus"]!!)
-            name    = project.extra["maven.nexus.name"]!! as String
+/** 8) Configuration for publishing to private Maven Nexus repository */
+System.getenv("PRIVATE_NEXUS_AVAILABLE")?.let {
+    publishing {
+        repositories {
+            maven {
+                url     = uri(project.extra["private.maven.nexus"]!!)
+                name    = project.extra["private.maven.nexus.name"]!! as String
 
-            credentials {
-                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+                credentials {
+                    username = project.extra["private.maven.nexus.login.username"]!! as String
+                    password = project.extra["private.maven.nexus.login.password"]!! as String
+                }
             }
-        }
-    }
-
-    publications {
-        register<MavenPublication>("gpr") {
-            from(components["java"])
-            artifactId = project.extra["plugin.artifactId"]!! as String
         }
     }
 }

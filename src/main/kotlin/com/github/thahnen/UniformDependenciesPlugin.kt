@@ -198,9 +198,9 @@ open class UniformDependenciesPlugin : Plugin<Project> {
 
                         println(
                             "[UniformDependenciesPlugin] $path does not contain this dependency "
-                            + "'${dependency.group}:${dependency.name}:${dependency.version}'. Maybe consider adding it"
-                            + "or ignore this warning IF IT IS a dependency of another dependency! No exception thrown "
-                            + "because strictness level is not set to Strictness.STRICT!"
+                            + "'${dependency.group}:${dependency.name}:${dependency.version}'. Maybe consider adding "
+                            + "it or ignore this warning IF IT IS a dependency of another dependency! No exception "
+                            + "thrown because strictness level is not set to Strictness.STRICT!"
                         )
                     }
                 }

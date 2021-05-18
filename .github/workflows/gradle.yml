@@ -67,14 +67,8 @@ jobs:
         uses: cicirello/jacoco-badge-generator@v2
         with:
           jacoco-csv-file: build/reports/jacoco/test/jacocoTestReport.csv
-      
-      # 10) publish Gradle Plugin to GitHub Maven Nexus
-      - name: Plugin upload
-        run: ./gradlew publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 11) commit changes
+      # 10) commit changes
       - name: commit badges
         uses: EndBug/add-and-commit@v7
         with:

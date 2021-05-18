@@ -26,27 +26,31 @@ import com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariabl
 class UniformDependenciesPluginTest {
 
     // test cases properties file
-    private val dependenciesPropertiesPath: String  = this.javaClass.classLoader.getResource("dependencies.properties")!!
-                                                        .path.replace("%20", " ")
-    private val wrong1PropertiesPath: String        = this.javaClass.classLoader.getResource("dependencies_wrong1.properties")!!
-                                                        .path.replace("%20", " ")
-    private val wrong2PropertiesPath: String        = this.javaClass.classLoader.getResource("dependencies_wrong2.properties")!!
-                                                        .path.replace("%20", " ")
-    private val wrong3PropertiesPath: String        = this.javaClass.classLoader.getResource("dependencies_wrong3.properties")!!
-                                                        .path.replace("%20", " ")
-    private val wrong4PropertiesPath: String        = this.javaClass.classLoader.getResource("dependencies_wrong4.properties")!!
-                                                        .path.replace("%20", " ")
-    private val wrong5PropertiesPath: String        = this.javaClass.classLoader.getResource("dependencies_wrong5.properties")!!
-                                                        .path.replace("%20", " ")
+    private val correct1PropertiesPath: String  = this.javaClass.classLoader.getResource("dependencies_correct1.properties")!!
+                                                    .path.replace("%20", " ")
+    private val correct2PropertiesPath: String  = this.javaClass.classLoader.getResource("dependencies_correct2.properties")!!
+                                                    .path.replace("%20", " ")
+    private val wrong1PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong1.properties")!!
+                                                    .path.replace("%20", " ")
+    private val wrong2PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong2.properties")!!
+                                                    .path.replace("%20", " ")
+    private val wrong3PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong3.properties")!!
+                                                    .path.replace("%20", " ")
+    private val wrong4PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong4.properties")!!
+                                                    .path.replace("%20", " ")
+    private val wrong5PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong5.properties")!!
+                                                    .path.replace("%20", " ")
 
     // test cases properties
-    private val dependenciesProperties = Properties()
+    private val correct1Properties = Properties()
+    private val correct2Properties = Properties()
 
 
     /** 0) Configuration to read properties once before running multiple tests using them */
     @Throws(IOException::class)
     @Before fun configureTestsuite() {
-        dependenciesProperties.load(FileInputStream(dependenciesPropertiesPath))
+        correct1Properties.load(FileInputStream(correct1PropertiesPath))
+        correct2Properties.load(FileInputStream(correct2PropertiesPath))
     }
 
 
@@ -69,13 +73,28 @@ class UniformDependenciesPluginTest {
 
     /** 2) Tests only applying the plugin (with one environment variable used for configuration) */
     @Test fun testApplyPluginWithEnvironmentVariableToProject() {
-        val project = ProjectBuilder.builder().build()
+        var project = ProjectBuilder.builder().build()
 
         withEnvironmentVariable(
-            "plugins.uniformdependencies.path", dependenciesPropertiesPath
+            "plugins.uniformdependencies.path", correct1PropertiesPath
         ).execute {
             // assert the environment variable is set correctly
-            assertEquals(dependenciesPropertiesPath, System.getenv("plugins.uniformdependencies.path"))
+            assertEquals(correct1PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
+
+            // apply plugin
+            project.pluginManager.apply(UniformDependenciesPlugin::class.java)
+
+            // assert that plugin is loaded
+            assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+        }
+
+        project = ProjectBuilder.builder().build()
+
+        withEnvironmentVariable(
+            "plugins.uniformdependencies.path", correct2PropertiesPath
+        ).execute {
+            // assert the environment variable is set correctly
+            assertEquals(correct2PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
 
             // apply plugin
             project.pluginManager.apply(UniformDependenciesPlugin::class.java)
@@ -91,12 +110,12 @@ class UniformDependenciesPluginTest {
         val project = ProjectBuilder.builder().build()
 
         withEnvironmentVariable(
-            "plugins.uniformdependencies.path", dependenciesPropertiesPath
+            "plugins.uniformdependencies.path", correct1PropertiesPath
         ).and(
             "plugins.uniformdependencies.strictness", Strictness.STRICT.toString()
         ).execute {
             // assert the environment variable is set correctly
-            assertEquals(dependenciesPropertiesPath, System.getenv("plugins.uniformdependencies.path"))
+            assertEquals(correct1PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
 
             // apply plugin
             project.pluginManager.apply(UniformDependenciesPlugin::class.java)
@@ -112,7 +131,7 @@ class UniformDependenciesPluginTest {
         var project = ProjectBuilder.builder().build()
 
         withEnvironmentVariable(
-            "plugins.uniformdependencies.path", dependenciesPropertiesPath
+            "plugins.uniformdependencies.path", correct1PropertiesPath
         ).and(
             "plugins.uniformdependencies.strictness", "Banana"
         ).execute {
@@ -257,7 +276,7 @@ class UniformDependenciesPluginTest {
         with(project) {
             // project gradle.properties reference (project.properties.set can not be used directly!)
             val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
-            propertiesExtension["plugins.uniformdependencies.path"] = dependenciesPropertiesPath
+            propertiesExtension["plugins.uniformdependencies.path"] = correct1PropertiesPath
             propertiesExtension["plugins.uniformdependencies.strictness"] = Strictness.STRICT.toString()
 
             // apply plugin
@@ -271,7 +290,7 @@ class UniformDependenciesPluginTest {
         with(project) {
             // project gradle.properties reference (project.properties.set can not be used directly!)
             val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
-            propertiesExtension["plugins.uniformdependencies.path"] = dependenciesPropertiesPath
+            propertiesExtension["plugins.uniformdependencies.path"] = correct1PropertiesPath
             propertiesExtension["plugins.uniformdependencies.strictness"] = Strictness.LOOSELY.toString()
 
             // apply plugin
@@ -285,7 +304,7 @@ class UniformDependenciesPluginTest {
         with(project) {
             // project gradle.properties reference (project.properties.set can not be used directly!)
             val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
-            propertiesExtension["plugins.uniformdependencies.path"] = dependenciesPropertiesPath
+            propertiesExtension["plugins.uniformdependencies.path"] = correct1PropertiesPath
             propertiesExtension["plugins.uniformdependencies.strictness"] = Strictness.LOOSE.toString()
 
             // apply plugin
@@ -297,13 +316,71 @@ class UniformDependenciesPluginTest {
     }
 
 
-    /** 7) Tests applying the plugin and evaluates that the extension set by plugin exists */
+    /** 7) Tests only applying the plugin (with project gradle.properties wrong used for configuration) */
+    @Test fun testApplyPluginWithWrongGradlePropertiesToProject() {
+        var project = ProjectBuilder.builder().build()
+        with(project) {
+            // project gradle.properties reference (project.properties.set can not be used directly!)
+            val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
+            propertiesExtension["plugins.uniformdependencies.path"] = correct1PropertiesPath
+            propertiesExtension["plugins.uniformdependencies.strictness"] = "Banana"
+
+            try {
+                // try applying plugin (should fail)
+                project.pluginManager.apply(UniformDependenciesPlugin::class.java)
+            } catch (e: Exception) {
+                // assert applying did not work
+                assert(e.cause is WrongStrictnessLevelException)
+            }
+
+            assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+        }
+
+        project = ProjectBuilder.builder().build()
+        with(project) {
+            // project gradle.properties reference (project.properties.set can not be used directly!)
+            val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
+            propertiesExtension["plugins.uniformdependencies.path"] = correct1PropertiesPath
+            propertiesExtension["plugins.uniformdependencies.strictness"] = "Banana"
+
+            try {
+                // try applying plugin (should fail)
+                project.pluginManager.apply(UniformDependenciesPlugin::class.java)
+            } catch (e: Exception) {
+                // assert applying did not work
+                assert(e.cause is WrongStrictnessLevelException)
+            }
+
+            assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+        }
+
+        project = ProjectBuilder.builder().build()
+        with(project) {
+            // project gradle.properties reference (project.properties.set can not be used directly!)
+            val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
+            propertiesExtension["plugins.uniformdependencies.path"] = correct1PropertiesPath
+            propertiesExtension["plugins.uniformdependencies.strictness"] = "Banana"
+
+            try {
+                // try applying plugin (should fail)
+                project.pluginManager.apply(UniformDependenciesPlugin::class.java)
+            } catch (e: Exception) {
+                // assert applying did not work
+                assert(e.cause is WrongStrictnessLevelException)
+            }
+
+            assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+        }
+    }
+
+
+    /** 8) Tests applying the plugin and evaluates that the extension set by plugin exists */
     @Test fun testEvaluatePluginExtension() {
         val project = ProjectBuilder.builder().build()
 
         // project gradle.properties reference (project.properties.set can not be used directly!)
         val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
-        propertiesExtension["plugins.uniformdependencies.path"] = dependenciesPropertiesPath
+        propertiesExtension["plugins.uniformdependencies.path"] = correct1PropertiesPath
 
         // apply plugin
         project.pluginManager.apply(UniformDependenciesPlugin::class.java)
@@ -311,11 +388,11 @@ class UniformDependenciesPluginTest {
         // assert that extension exists and is configured correctly
         val extension = project.extensions.getByType(UniformDependenciesPluginExtension::class.java)
 
-        assertEquals(dependenciesPropertiesPath, extension.path.get())
+        assertEquals(correct1PropertiesPath, extension.path.get())
         assertEquals(Strictness.LOOSELY, extension.strictness.get())
 
         val dependenciesFromFile = UniformDependenciesPlugin.parseDependenciesList(
-            File(dependenciesPropertiesPath).absolutePath
+            File(correct1PropertiesPath).absolutePath
         ).toList()
         val dependenciesExtension = extension.dependencies.get().split(";")
 
@@ -326,26 +403,18 @@ class UniformDependenciesPluginTest {
     }
 
 
-    /** 8) Tests applying the plugin and evaluates that Java plugin was applied */
+    /** 9) Tests applying the plugin and evaluates that Java plugin was applied */
     @Test fun testEvaluateCorrectnessJavaPlugin() {
         val project = ProjectBuilder.builder().build()
 
         // project gradle.properties reference (project.properties.set can not be used directly!)
         val propertiesExtension = project.extensions.getByType(ExtraPropertiesExtension::class.java)
-        propertiesExtension["plugins.uniformdependencies.path"] = dependenciesPropertiesPath
+        propertiesExtension["plugins.uniformdependencies.path"] = correct1PropertiesPath
 
         // apply plugin
         project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
         // assert that Java plugin was applied to the project
         assertEquals(true, project.plugins.hasPlugin(JavaPlugin::class.java))
-    }
-
-
-    /** 9) Tests applying the plugin and evaluates the new resolution strategy for dependency configuration */
-    @Test fun testEvaluateResolutionStrategy() {
-        // 1. using implementation(...) with correct data
-        // 2. using implementation(...) with incorrect data
-        // ...
     }
 }
