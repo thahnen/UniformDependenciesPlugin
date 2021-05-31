@@ -1,0 +1,20 @@
+# Validation of things connected to Gradle
+name: Gradle Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      
+      # Validates using external Action that Gradle Wrapper used is correct
+      - uses: gradle/wrapper-validation-action@v1.0.4
