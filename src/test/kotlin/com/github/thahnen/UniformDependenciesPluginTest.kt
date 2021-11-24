@@ -1,14 +1,13 @@
 package com.github.thahnen
 
-import org.junit.Before
-import org.junit.Test
-
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.Properties
 
-import kotlin.test.assertEquals
+import org.junit.Assert
+import org.junit.BeforeClass
+import org.junit.Test
 
 import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.gradle.api.plugins.JavaPlugin
@@ -25,32 +24,33 @@ import com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariabl
  */
 class UniformDependenciesPluginTest {
 
-    // test cases properties file
-    private val correct1PropertiesPath: String  = this.javaClass.classLoader.getResource("dependencies_correct1.properties")!!
-                                                    .path.replace("%20", " ")
-    private val correct2PropertiesPath: String  = this.javaClass.classLoader.getResource("dependencies_correct2.properties")!!
-                                                    .path.replace("%20", " ")
-    private val wrong1PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong1.properties")!!
-                                                    .path.replace("%20", " ")
-    private val wrong2PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong2.properties")!!
-                                                    .path.replace("%20", " ")
-    private val wrong3PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong3.properties")!!
-                                                    .path.replace("%20", " ")
-    private val wrong4PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong4.properties")!!
-                                                    .path.replace("%20", " ")
-    private val wrong5PropertiesPath: String    = this.javaClass.classLoader.getResource("dependencies_wrong5.properties")!!
-                                                    .path.replace("%20", " ")
+    companion object {
+        // test cases properties file
+        private val correct1PropertiesPath: String  = resource("dependencies_correct1.properties")
+        private val correct2PropertiesPath: String  = resource("dependencies_correct2.properties")
+        private val wrong1PropertiesPath: String    = resource("dependencies_wrong1.properties")
+        private val wrong2PropertiesPath: String    = resource("dependencies_wrong2.properties")
+        private val wrong3PropertiesPath: String    = resource("dependencies_wrong3.properties")
+        private val wrong4PropertiesPath: String    = resource("dependencies_wrong4.properties")
+        private val wrong5PropertiesPath: String    = resource("dependencies_wrong5.properties")
 
-    // test cases properties
-    private val correct1Properties = Properties()
-    private val correct2Properties = Properties()
+        // test cases properties
+        private val correct1Properties = Properties()
+        private val correct2Properties = Properties()
 
 
-    /** 0) Configuration to read properties once before running multiple tests using them */
-    @Throws(IOException::class)
-    @Before fun configureTestsuite() {
-        correct1Properties.load(FileInputStream(correct1PropertiesPath))
-        correct2Properties.load(FileInputStream(correct2PropertiesPath))
+        /** internally used simplified resource loader */
+        private fun resource(path: String): String {
+            return this::class.java.classLoader.getResource(path)!!.path.replace("%20", " ")
+        }
+
+
+        /** 0) Configuration to read properties once before running multiple tests using them */
+        @Throws(IOException::class)
+        @BeforeClass @JvmStatic fun configureTestsuite() {
+            correct1Properties.load(FileInputStream(correct1PropertiesPath))
+            correct2Properties.load(FileInputStream(correct2PropertiesPath))
+        }
     }
 
 
@@ -67,7 +67,7 @@ class UniformDependenciesPluginTest {
             assert(e.cause is UniformDependenciesException)
         }
 
-        assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+        Assert.assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
     }
 
 
@@ -79,13 +79,13 @@ class UniformDependenciesPluginTest {
             "plugins.uniformdependencies.path", correct1PropertiesPath
         ).execute {
             // assert the environment variable is set correctly
-            assertEquals(correct1PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
+            Assert.assertEquals(correct1PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
 
             // apply plugin
             project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
             // assert that plugin is loaded
-            assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
 
         project = ProjectBuilder.builder().build()
@@ -94,13 +94,13 @@ class UniformDependenciesPluginTest {
             "plugins.uniformdependencies.path", correct2PropertiesPath
         ).execute {
             // assert the environment variable is set correctly
-            assertEquals(correct2PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
+            Assert.assertEquals(correct2PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
 
             // apply plugin
             project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
             // assert that plugin is loaded
-            assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
     }
 
@@ -115,13 +115,13 @@ class UniformDependenciesPluginTest {
             "plugins.uniformdependencies.strictness", Strictness.STRICT.toString()
         ).execute {
             // assert the environment variable is set correctly
-            assertEquals(correct1PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
+            Assert.assertEquals(correct1PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
 
             // apply plugin
             project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
             // assert that plugin is loaded
-            assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
     }
 
@@ -143,7 +143,7 @@ class UniformDependenciesPluginTest {
                 assert(e.cause is WrongStrictnessLevelException)
             }
 
-            assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
 
         project = ProjectBuilder.builder().build()
@@ -161,20 +161,22 @@ class UniformDependenciesPluginTest {
                 assert(e.cause is WrongDependenciesPathException)
             }
 
-            assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
     }
 
 
     /** 5) Tests only applying the plugin (with both environment variables used for configuration) */
     @Test fun testApplyPluginWithEnvironmentVariablesWrongDataToProject() {
-        var project = ProjectBuilder.builder().build()
-        with(project) {
+        listOf(
+            wrong1PropertiesPath, wrong2PropertiesPath, wrong3PropertiesPath, wrong4PropertiesPath, wrong5PropertiesPath
+        ).forEach {
+            val project = ProjectBuilder.builder().build()
             withEnvironmentVariable(
-                "plugins.uniformdependencies.path", wrong1PropertiesPath
+                "plugins.uniformdependencies.path", it
             ).execute {
                 // assert the environment variable is set correctly
-                assertEquals(wrong1PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
+                Assert.assertEquals(it, System.getenv("plugins.uniformdependencies.path"))
 
                 try {
                     // try applying plugin (should fail)
@@ -184,87 +186,7 @@ class UniformDependenciesPluginTest {
                     assert(e.cause is ParsingDependenciesException)
                 }
 
-                assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
-            }
-        }
-
-        project = ProjectBuilder.builder().build()
-        with(project) {
-            withEnvironmentVariable(
-                "plugins.uniformdependencies.path", wrong2PropertiesPath
-            ).execute {
-                // assert the environment variable is set correctly
-                assertEquals(wrong2PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
-
-                try {
-                    // try applying plugin (should fail)
-                    project.pluginManager.apply(UniformDependenciesPlugin::class.java)
-                } catch (e: Exception) {
-                    // assert applying did not work
-                    assert(e.cause is ParsingDependenciesException)
-                }
-
-                assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
-            }
-        }
-
-        project = ProjectBuilder.builder().build()
-        with(project) {
-            withEnvironmentVariable(
-                "plugins.uniformdependencies.path", wrong3PropertiesPath
-            ).execute {
-                // assert the environment variable is set correctly
-                assertEquals(wrong3PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
-
-                try {
-                    // try applying plugin (should fail)
-                    project.pluginManager.apply(UniformDependenciesPlugin::class.java)
-                } catch (e: Exception) {
-                    // assert applying did not work
-                    assert(e.cause is ParsingDependenciesException)
-                }
-
-                assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
-            }
-        }
-
-        project = ProjectBuilder.builder().build()
-        with(project) {
-            withEnvironmentVariable(
-                "plugins.uniformdependencies.path", wrong4PropertiesPath
-            ).execute {
-                // assert the environment variable is set correctly
-                assertEquals(wrong4PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
-
-                try {
-                    // try applying plugin (should fail)
-                    project.pluginManager.apply(UniformDependenciesPlugin::class.java)
-                } catch (e: Exception) {
-                    // assert applying did not work
-                    assert(e.cause is ParsingDependenciesException)
-                }
-
-                assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
-            }
-        }
-
-        project = ProjectBuilder.builder().build()
-        with(project) {
-            withEnvironmentVariable(
-                "plugins.uniformdependencies.path", wrong5PropertiesPath
-            ).execute {
-                // assert the environment variable is set correctly
-                assertEquals(wrong5PropertiesPath, System.getenv("plugins.uniformdependencies.path"))
-
-                try {
-                    // try applying plugin (should fail)
-                    project.pluginManager.apply(UniformDependenciesPlugin::class.java)
-                } catch (e: Exception) {
-                    // assert applying did not work
-                    assert(e.cause is ParsingDependenciesException)
-                }
-
-                assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+                Assert.assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
             }
         }
     }
@@ -283,7 +205,7 @@ class UniformDependenciesPluginTest {
             project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
             // assert that plugin is loaded
-            assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
 
         project = ProjectBuilder.builder().build()
@@ -297,7 +219,7 @@ class UniformDependenciesPluginTest {
             project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
             // assert that plugin is loaded
-            assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
 
         project = ProjectBuilder.builder().build()
@@ -311,7 +233,7 @@ class UniformDependenciesPluginTest {
             project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
             // assert that plugin is loaded
-            assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(true, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
     }
 
@@ -333,7 +255,7 @@ class UniformDependenciesPluginTest {
                 assert(e.cause is WrongStrictnessLevelException)
             }
 
-            assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
 
         project = ProjectBuilder.builder().build()
@@ -351,7 +273,7 @@ class UniformDependenciesPluginTest {
                 assert(e.cause is WrongStrictnessLevelException)
             }
 
-            assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
 
         project = ProjectBuilder.builder().build()
@@ -369,7 +291,7 @@ class UniformDependenciesPluginTest {
                 assert(e.cause is WrongStrictnessLevelException)
             }
 
-            assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
+            Assert.assertEquals(false, project.plugins.hasPlugin(UniformDependenciesPlugin::class.java))
         }
     }
 
@@ -388,17 +310,17 @@ class UniformDependenciesPluginTest {
         // assert that extension exists and is configured correctly
         val extension = project.extensions.getByType(UniformDependenciesPluginExtension::class.java)
 
-        assertEquals(correct1PropertiesPath, extension.path.get())
-        assertEquals(Strictness.LOOSELY, extension.strictness.get())
+        Assert.assertEquals(correct1PropertiesPath, extension.path.get())
+        Assert.assertEquals(Strictness.LOOSELY, extension.strictness.get())
 
         val dependenciesFromFile = UniformDependenciesPlugin.parseDependenciesList(
             File(correct1PropertiesPath).absolutePath
         ).toList()
         val dependenciesExtension = extension.dependencies.get().split(";")
 
-        assertEquals(dependenciesFromFile.size, dependenciesExtension.size)
+        Assert.assertEquals(dependenciesFromFile.size, dependenciesExtension.size)
         dependenciesFromFile.forEach {
-            assertEquals(true, dependenciesExtension.contains("${it.group}:${it.name}:${it.version}"))
+            Assert.assertEquals(true, dependenciesExtension.contains("${it.group}:${it.name}:${it.version}"))
         }
     }
 
@@ -415,6 +337,6 @@ class UniformDependenciesPluginTest {
         project.pluginManager.apply(UniformDependenciesPlugin::class.java)
 
         // assert that Java plugin was applied to the project
-        assertEquals(true, project.plugins.hasPlugin(JavaPlugin::class.java))
+        Assert.assertEquals(true, project.plugins.hasPlugin(JavaPlugin::class.java))
     }
 }

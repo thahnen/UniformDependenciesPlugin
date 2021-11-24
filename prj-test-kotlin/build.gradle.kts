@@ -7,7 +7,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("com.thahnen.gradle:UniformDependenciesPlugin:1.0.0")
+        classpath("com.thahnen.gradle:UniformDependenciesPlugin:1.0.1-pre")
     }
 }
 

@@ -16,6 +16,7 @@ plugins {
 
     id("org.jetbrains.kotlin.jvm") version "1.4.20"
     id("com.gradle.plugin-publish") version "0.14.0"
+    id("io.gitlab.arturbosch.detekt") version "1.19.0-RC2"
 }
 
 
@@ -54,7 +55,14 @@ tasks.jacocoTestReport {
 }
 
 
-/** 6) Plugin configuration */
+/** 6) detekt configuration */
+detekt {
+    ignoreFailures = true
+    basePath = projectDir.toString()
+}
+
+
+/** 7) Plugin configuration */
 pluginBundle {
     website = "https://github.com/thahnen/UniformDependenciesPlugin"
     vcsUrl  = "https://github.com/thahnen/UniformDependenciesPlugin.git"
@@ -62,7 +70,7 @@ pluginBundle {
 }
 
 
-/** 7) Configuration for publishing plugin to Gradle Plugin Portal */
+/** 8) Configuration for publishing plugin to Gradle Plugin Portal */
 gradlePlugin {
     plugins {
         create(project.extra["plugin.name"]!! as String) {
@@ -75,7 +83,7 @@ gradlePlugin {
 }
 
 
-/** 8) Configuration for publishing to private Maven Nexus repository */
+/** 9) Configuration for publishing to private Maven Nexus repository */
 System.getenv("PRIVATE_NEXUS_AVAILABLE")?.let {
     publishing {
         repositories {

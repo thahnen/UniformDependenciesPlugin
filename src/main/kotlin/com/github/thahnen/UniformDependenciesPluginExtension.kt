@@ -12,6 +12,7 @@ import org.gradle.api.provider.Property
  *
  *  @author thahnen
  */
+@Suppress("UnnecessaryAbstractClass")
 abstract class UniformDependenciesPluginExtension {
 
     /** stores the path to the properties file holding all information on dependencies provided to this plugin */

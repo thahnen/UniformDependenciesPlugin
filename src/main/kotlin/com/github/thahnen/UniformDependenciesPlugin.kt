@@ -28,13 +28,13 @@ import org.gradle.kotlin.dsl.extra
  */
 open class UniformDependenciesPlugin : Plugin<Project> {
 
-    // identifiers of properties connected to this plugin
-    private val KEY_PATH        = "plugins.uniformdependencies.path"
-    private val KEY_STRICTNESS  = "plugins.uniformdependencies.strictness"
-    private val KEY_EXTENSION   = "uniformdependenciespluginextension"
-
-
     companion object {
+        // identifiers of properties connected to this plugin
+        internal const val KEY_PATH         = "plugins.uniformdependencies.path"
+        internal const val KEY_STRICTNESS   = "plugins.uniformdependencies.strictness"
+        internal const val KEY_EXTENSION    = "uniformdependenciespluginextension"
+
+
         /**
          *  Parses given properties file containing all dependencies, where each dependency corresponds to two connected
          *  properties which look like
@@ -251,7 +251,7 @@ open class UniformDependenciesPlugin : Plugin<Project> {
         return System.getenv(KEY_STRICTNESS)?.let {
             try {
                 Strictness.valueOf(it)
-            } catch (e: IllegalArgumentException) {
+            } catch (ignored: IllegalArgumentException) {
                 throw WrongStrictnessLevelException(
                     "Strictness level provided by environment variable '${it}' was incorrect! Possible values are: "
                     + Strictness.values().toString()
@@ -266,7 +266,7 @@ open class UniformDependenciesPlugin : Plugin<Project> {
                 } else {
                     Strictness.LOOSELY
                 }
-            } catch (e: IllegalArgumentException) {
+            } catch (ignored: IllegalArgumentException) {
                 throw WrongStrictnessLevelException(
                     "Strictness level provided in gradle.properties was incorrect! Possible values are: "
                     + Strictness.values().toString()
